@@ -1,0 +1,40 @@
+# render.yaml — deploy automático do Garimpeiro 3D no Render
+# Sobe em: https://dashboard.render.com/ → New → Blueprint → conectar este repo
+# Free tier: CPU compartilhada, hiberna após 15min sem tráfego (cold start ~30s), disco persistente 1GB.
+
+services:
+  - type: web
+    name: garimpeiro-3d
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./Dockerfile
+
+    # Variáveis públicas — você pode adicionar mais no painel da Render depois
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: WA_WEBHOOK_VERIFY_TOKEN
+        value: garimpo-3d-verify      # mude isso depois, é a senha do webhook da Meta
+      - key: PORT
+        value: 3040                    # Render ignora; ela usa $PORT interno, mas o app lê $PORT
+
+      # ===== Preencha aqui se quiser (opcional) =====
+      # WA_PHONE_NUMBER_ID: ...
+      # WA_ACCESS_TOKEN: ...
+      # SHOPEE_AFFILIATE_ID: ...
+      # ML_AFFILIATE_ID: ...
+      # ALIEXPRESS_TRACKING_ID: ...
+      # SCAN_INTERVAL_MIN: 15
+      # MIN_DISCOUNT_PCT: 20
+
+    # Disco persistente: garante que o banco SQLite não suma entre deploys
+    disk:
+      name: garimpeiro-data
+      mountPath: /app/data
+      sizeGB: 1
+
+    healthCheckPath: /health
+
+    autoDeploy: true
