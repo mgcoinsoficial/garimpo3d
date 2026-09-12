@@ -1,0 +1,1239 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Garimpeiro 3D — Painel Admin</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🛸%3C/text%3E%3C/svg%3E" />
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --bg-2: #11151d;
+      --bg-3: #161b25;
+      --border: #1f2632;
+      --text: #e6e9ef;
+      --text-dim: #9aa3b2;
+      --text-faint: #6b7385;
+      --accent: #00d9a3;
+      --accent-2: #00b389;
+      --warn: #ffb454;
+      --danger: #ff5b6b;
+      --info: #5da9ff;
+      --pill: #1a2230;
+      --shadow: 0 8px 24px rgba(0,0,0,.45);
+      --radius: 10px;
+      --radius-sm: 6px;
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, pre, .mono { font-family: var(--mono); font-size: 12.5px; }
+
+    /* === Layout === */
+    .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+    .sidebar {
+      background: var(--bg-2);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      position: sticky; top: 0; height: 100vh;
+    }
+    .brand {
+      padding: 18px 18px 14px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-mark {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--info));
+      display: grid; place-items: center;
+      font-size: 18px;
+    }
+    .brand-name { font-weight: 700; letter-spacing: -.2px; }
+    .brand-tag { color: var(--text-faint); font-size: 11px; margin-top: 2px; }
+    nav.menu { padding: 12px 8px; flex: 1; overflow-y: auto; }
+    .menu-section { color: var(--text-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 12px 10px 6px; }
+    .menu a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 10px; border-radius: var(--radius-sm);
+      color: var(--text-dim); font-weight: 500;
+    }
+    .menu a:hover { background: var(--bg-3); color: var(--text); text-decoration: none; }
+    .menu a.active { background: var(--bg-3); color: var(--accent); }
+    .menu a .icon { width: 18px; text-align: center; }
+    .menu a .badge { margin-left: auto; background: var(--pill); color: var(--text-dim); font-size: 11px; padding: 2px 7px; border-radius: 999px; }
+    .menu a.active .badge { background: var(--accent); color: #06241b; }
+
+    .sidebar-foot {
+      padding: 12px 14px;
+      border-top: 1px solid var(--border);
+      font-size: 12px; color: var(--text-faint);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .dot.off { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+    .dot.warn { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+
+    main { padding: 24px 32px 48px; max-width: 1400px; }
+    header.topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 22px;
+    }
+    h1 { font-size: 22px; margin: 0; letter-spacing: -.3px; }
+    .subtitle { color: var(--text-dim); margin-top: 4px; font-size: 13px; }
+    .topbar-actions { display: flex; gap: 8px; align-items: center; }
+    .topbar-meta { color: var(--text-faint); font-size: 12px; }
+
+    .view { display: none; }
+    .view.active { display: block; animation: fade .15s ease; }
+    @keyframes fade { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+
+    /* === Cards === */
+    .grid { display: grid; gap: 16px; }
+    .grid.cols-2 { grid-template-columns: 1fr 1fr; }
+    .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 1000px) {
+      .grid.cols-3, .grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
+      .app { grid-template-columns: 64px 1fr; }
+      .sidebar .brand-name, .sidebar .brand-tag, .menu a span.label, .menu-section, .sidebar-foot .conn-text { display: none; }
+      .menu a { justify-content: center; }
+    }
+    @media (max-width: 640px) {
+      .grid.cols-2, .grid.cols-3, .grid.cols-4 { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .card h3 { margin: 0 0 4px; font-size: 14px; color: var(--text-dim); font-weight: 500; }
+    .card .metric { font-size: 26px; font-weight: 700; margin-top: 8px; letter-spacing: -.5px; }
+    .card .metric-sub { color: var(--text-faint); font-size: 12px; margin-top: 4px; }
+    .card.green .metric { color: var(--accent); }
+    .card.warn .metric { color: var(--warn); }
+    .card.danger .metric { color: var(--danger); }
+    .card.info .metric { color: var(--info); }
+
+    .panel {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .panel-head {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+    }
+    .panel-head h2 { margin: 0; font-size: 15px; }
+    .panel-head .actions { display: flex; gap: 8px; }
+    .panel-body { padding: 18px; }
+    .panel-body.flush { padding: 0; }
+
+    /* === Buttons === */
+    button, .btn {
+      background: var(--bg-3);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 7px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 500;
+      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: inherit;
+    }
+    button:hover, .btn:hover { background: #1c2331; }
+    button.primary, .btn.primary { background: var(--accent); color: #06241b; border-color: var(--accent); }
+    button.primary:hover, .btn.primary:hover { background: var(--accent-2); }
+    button.danger, .btn.danger { background: var(--danger); color: white; border-color: var(--danger); }
+    button.ghost, .btn.ghost { background: transparent; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* === Form === */
+    label { display: block; color: var(--text-dim); font-size: 12px; margin-bottom: 5px; }
+    input[type="text"], input[type="number"], input[type="password"], input[type="url"], textarea, select {
+      width: 100%;
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 9px 11px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-family: inherit;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,217,163,.15);
+    }
+    textarea { resize: vertical; min-height: 80px; font-family: var(--mono); }
+    .row { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+    .row-3 { display: grid; gap: 12px; grid-template-columns: 1fr 1fr 1fr; }
+    @media (max-width: 700px) { .row, .row-3 { grid-template-columns: 1fr; } }
+    .form-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
+    /* === Tables === */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--text-faint); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; background: var(--bg-3); }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    td .truncate { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
+    td.num { text-align: right; font-family: var(--mono); }
+    .empty { padding: 32px; text-align: center; color: var(--text-faint); font-size: 13px; }
+
+    /* === Pills / status === */
+    .pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; background: var(--pill); color: var(--text-dim); }
+    .pill.ok { background: rgba(0,217,163,.12); color: var(--accent); }
+    .pill.warn { background: rgba(255,180,84,.12); color: var(--warn); }
+    .pill.danger { background: rgba(255,91,107,.12); color: var(--danger); }
+    .pill.info { background: rgba(93,169,255,.12); color: var(--info); }
+    .pill.muted { background: var(--pill); color: var(--text-faint); }
+
+    /* === Modal === */
+    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: center; justify-content: center; z-index: 100; }
+    .modal-bg.open { display: flex; }
+    .modal {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 560px; max-width: 92vw;
+      max-height: 90vh; overflow: auto;
+      box-shadow: var(--shadow);
+    }
+    .modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .modal-head h2 { margin: 0; font-size: 16px; }
+    .modal-body { padding: 20px; }
+    .modal-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+    .close-x { background: transparent; border: 0; color: var(--text-faint); font-size: 22px; cursor: pointer; padding: 0 4px; }
+
+    /* === Logs === */
+    .logs {
+      background: #06080c;
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      max-height: 540px;
+      overflow: auto;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .log-line { padding: 2px 0; color: var(--text-dim); white-space: pre-wrap; word-break: break-word; }
+    .log-line.info { color: #aab2c0; }
+    .log-line.warn { color: var(--warn); }
+    .log-line.error { color: var(--danger); }
+    .log-line .ts { color: var(--text-faint); margin-right: 8px; }
+    .log-line .lvl { display: inline-block; width: 50px; text-align: center; margin-right: 6px; border-radius: 3px; padding: 1px 4px; font-size: 10px; }
+    .log-line.info .lvl { background: rgba(170,178,192,.15); color: #aab2c0; }
+    .log-line.warn .lvl { background: rgba(255,180,84,.15); color: var(--warn); }
+    .log-line.error .lvl { background: rgba(255,91,107,.15); color: var(--danger); }
+
+    /* === Misc === */
+    .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+    .toolbar input { max-width: 280px; }
+    .hint { color: var(--text-faint); font-size: 12px; margin-top: 6px; }
+    .divider { height: 1px; background: var(--border); margin: 18px 0; }
+    .row-actions { display: flex; gap: 6px; }
+    .row-actions button { padding: 4px 8px; font-size: 11px; }
+    .flash { position: fixed; top: 20px; right: 20px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--bg-3); border: 1px solid var(--border); box-shadow: var(--shadow); z-index: 200; font-size: 13px; opacity: 0; transition: opacity .2s; }
+    .flash.show { opacity: 1; }
+    .flash.ok { border-color: var(--accent); }
+    .flash.error { border-color: var(--danger); }
+    .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch span { position: absolute; cursor: pointer; inset: 0; background: #2a3344; border-radius: 999px; transition: .2s; }
+    .switch span::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: .2s; }
+    .switch input:checked + span { background: var(--accent); }
+    .switch input:checked + span::before { transform: translateX(16px); }
+
+    .help { background: var(--bg-3); padding: 12px 14px; border-left: 3px solid var(--info); border-radius: var(--radius-sm); font-size: 12.5px; color: var(--text-dim); margin-bottom: 16px; }
+    .help b { color: var(--text); }
+
+    details { margin-top: 8px; }
+    details summary { cursor: pointer; color: var(--text-dim); font-size: 12px; padding: 4px 0; }
+    details pre { background: var(--bg-3); padding: 10px; border-radius: var(--radius-sm); overflow: auto; margin: 6px 0 0; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">🛸</div>
+      <div>
+        <div class="brand-name">Garimpeiro 3D</div>
+        <div class="brand-tag">Painel Admin · v1.0</div>
+      </div>
+    </div>
+    <nav class="menu" id="menu">
+      <div class="menu-section">Visão geral</div>
+      <a href="#dashboard" data-view="dashboard" class="active"><span class="icon">📊</span><span class="label">Dashboard</span></a>
+
+      <div class="menu-section">Configuração</div>
+      <a href="#connection" data-view="connection"><span class="icon">🔌</span><span class="label">Conexão WA</span></a>
+      <a href="#affiliates" data-view="affiliates"><span class="icon">💰</span><span class="label">Afiliados</span></a>
+      <a href="#groups" data-view="groups"><span class="icon">👥</span><span class="label">Grupos alvo</span></a>
+      <a href="#monitors" data-view="monitors"><span class="icon">🛰️</span><span class="label">Monitorados</span></a>
+      <a href="#filters" data-view="filters"><span class="icon">🎯</span><span class="label">Filtros 3D</span></a>
+
+      <div class="menu-section">Operação</div>
+      <a href="#offers" data-view="offers"><span class="icon">🛒</span><span class="label">Ofertas</span></a>
+      <a href="#coupons" data-view="coupons"><span class="icon">🎟️</span><span class="label">Cupons</span></a>
+      <a href="#queue" data-view="queue"><span class="icon">📨</span><span class="label">Fila de envio</span></a>
+
+      <div class="menu-section">Diagnóstico</div>
+      <a href="#logs" data-view="logs"><span class="icon">📜</span><span class="label">Logs</span></a>
+      <a href="#settings" data-view="settings"><span class="icon">⚙️</span><span class="label">Configurações</span></a>
+    </nav>
+    <div class="sidebar-foot">
+      <span class="dot" id="connDot"></span>
+      <span class="conn-text" id="connText">verificando…</span>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div>
+        <h1 id="viewTitle">Dashboard</h1>
+        <div class="subtitle" id="viewSubtitle">Status geral do sistema</div>
+      </div>
+      <div class="topbar-actions">
+        <span class="topbar-meta" id="lastUpdate">—</span>
+        <button class="ghost" onclick="refreshAll()">🔄 Atualizar</button>
+      </div>
+    </header>
+
+    <!-- ===== DASHBOARD ===== -->
+    <section class="view active" data-section="dashboard">
+      <div class="grid cols-4">
+        <div class="card green">
+          <h3>Ofertas salvas</h3>
+          <div class="metric" id="m_offers">—</div>
+          <div class="metric-sub" id="m_offers_sub">—</div>
+        </div>
+        <div class="card info">
+          <h3>Cupons descobertos</h3>
+          <div class="metric" id="m_coupons">—</div>
+          <div class="metric-sub" id="m_coupons_sub">—</div>
+        </div>
+        <div class="card warn">
+          <h3>Fila pendente</h3>
+          <div class="metric" id="m_queue">—</div>
+          <div class="metric-sub">aguardando envio</div>
+        </div>
+        <div class="card">
+          <h3>Grupos monitorados</h3>
+          <div class="metric" id="m_groups">—</div>
+          <div class="metric-sub" id="m_groups_sub">—</div>
+        </div>
+      </div>
+
+      <div style="height: 16px"></div>
+
+      <div class="grid cols-2">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Conexão WhatsApp</h2>
+            <button class="ghost" onclick="showView('connection')">Configurar →</button>
+          </div>
+          <div class="panel-body">
+            <div id="connSummary">carregando…</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Ações rápidas</h2>
+          </div>
+          <div class="panel-body">
+            <div class="grid cols-2">
+              <button class="primary" onclick="apiPost('/scan', null, 'Scan iniciado em background')">🔍 Rodar scan agora</button>
+              <button onclick="apiPost('/dispatch', null, 'Dispatch executado')">📨 Disparar fila</button>
+              <button onclick="simulateModal.open()">🧪 Simular mensagem</button>
+              <button onclick="testSendModal.open()">✉️ Enviar teste</button>
+            </div>
+            <div class="hint">Use as ações com moderação. Cada envio consome cota do WhatsApp.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height: 16px"></div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Últimas varreduras</h2>
+          <span class="pill muted" id="lastRunsBadge">carregando</span>
+        </div>
+        <div class="panel-body flush">
+          <table>
+            <thead>
+              <tr><th>Quando</th><th>Marketplace</th><th>Varridos</th><th>Filtrados</th><th>Salvos</th><th>Erros</th><th class="num">Duração</th></tr>
+            </thead>
+            <tbody id="lastRunsBody">
+              <tr><td colspan="7" class="empty">carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CONNECTION ===== -->
+    <section class="view" data-section="connection">
+      <div class="help">
+        <b>Como funciona:</b> você precisa de uma conta Meta Business com o produto WhatsApp ativado.
+        Pegue o <code>PHONE_NUMBER_ID</code> e o <code>ACCESS_TOKEN</code> no painel da Meta e cole abaixo.
+        O token <i>VERIFY_TOKEN</i> é uma string à sua escolha — o que você colocar aqui precisa ser o mesmo
+        que você digitar no campo "Verify Token" ao configurar o webhook no painel da Meta.
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Credenciais do WhatsApp Cloud API</h2>
+          <span class="pill" id="waStatus">verificando…</span>
+        </div>
+        <div class="panel-body">
+          <div class="row">
+            <div>
+              <label>Phone Number ID</label>
+              <input id="wa_phone_id" type="text" placeholder="ex: 109382938472918" />
+              <div class="hint">Aparece em WhatsApp → API Setup → Phone number ID</div>
+            </div>
+            <div>
+              <label>Access Token (permanente)</label>
+              <input id="wa_token" type="password" placeholder="EAAxxxxxxx..." />
+              <div class="hint">Recomendado gerar token de longa duração no System User</div>
+            </div>
+          </div>
+          <div style="height: 12px"></div>
+          <div class="row">
+            <div>
+              <label>Webhook Verify Token</label>
+              <input id="wa_verify" type="text" placeholder="frase-secreta" />
+              <div class="hint">Você vai usar essa mesma string na configuração do webhook na Meta</div>
+            </div>
+            <div>
+              <label>URL pública do webhook (gerada por você)</label>
+              <input id="wa_webhook_url" type="url" placeholder="https://seu-dominio.com/webhook" />
+              <div class="hint">Em produção precisa de HTTPS. Em dev use ngrok.</div>
+            </div>
+          </div>
+          <div class="form-foot">
+            <button class="ghost" onclick="testWaConnection()">🔌 Testar conexão</button>
+            <button class="primary" onclick="saveConnection()">💾 Salvar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== AFFILIATES ===== -->
+    <section class="view" data-section="affiliates">
+      <div class="help">
+        <b>Afiliados:</b> cadastre seus IDs de cada marketplace. O Garimpeiro converte automaticamente
+        cada link capturado em link de afiliado seu antes de postar no grupo.
+      </div>
+      <div class="grid cols-3">
+        <div class="panel">
+          <div class="panel-head"><h2>Shopee Afiliados</h2><span class="pill ok">Shopee</span></div>
+          <div class="panel-body">
+            <label>Affiliate ID</label>
+            <input id="af_shopee" type="text" placeholder="seu-id-shopee" />
+            <div class="hint">Programa oficial → <a href="https://affiliate.shopee.com.br" target="_blank">affiliate.shopee.com.br</a></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Mercado Livre</h2><span class="pill warn">Mercado Livre</span></div>
+          <div class="panel-body">
+            <label>Affiliate ID</label>
+            <input id="af_ml" type="text" placeholder="seu-id-ml" />
+            <div class="hint">Programa de afiliados → <a href="https://www.mercadolivre.com.br/afiliados" target="_blank">mercadolivre.com.br/afiliados</a></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>AliExpress</h2><span class="pill info">AliExpress</span></div>
+          <div class="panel-body">
+            <label>Tracking ID (Portals)</label>
+            <input id="af_ali" type="text" placeholder="seu-tracking-id" />
+            <div class="hint">Portals → <a href="https://portals.aliexpress.com" target="_blank">portals.aliexpress.com</a></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-foot" style="margin-top: 16px;">
+        <button class="primary" onclick="saveAffiliates()">💾 Salvar afiliados</button>
+      </div>
+    </section>
+
+    <!-- ===== GROUPS (alvo) ===== -->
+    <section class="view" data-section="groups">
+      <div class="help">
+        <b>Grupos alvo</b> são os seus grupos do WhatsApp onde o Garimpeiro vai postar as ofertas.
+        Você precisa adicionar o bot (seu número) aos grupos.
+        <br>Formato do ID: <code>120363012345678901@g.us</code> — você consegue via API da Meta.
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Grupos alvo (onde postamos)</h2>
+          <button class="primary" onclick="targetGroupModal.open()">+ Adicionar</button>
+        </div>
+        <div class="panel-body flush">
+          <table>
+            <thead><tr><th>ID do grupo</th><th>Adicionado em</th><th class="num">Ações</th></tr></thead>
+            <tbody id="targetGroupsBody"><tr><td colspan="3" class="empty">carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== MONITORS ===== -->
+    <section class="view" data-section="monitors">
+      <div class="help">
+        <b>Grupos monitorados</b> são grupos concorrentes. O Garimpeiro lê as mensagens deles,
+        detecta links de ofertas e cupons, troca os links pelos seus de afiliado e repostar nos seus grupos.
+        <br><b>Importante:</b> só funciona em grupos onde o seu número está — o webhook recebe as mensagens
+        dos grupos que você participa.
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Grupos concorrentes (lidos)</h2>
+          <button class="primary" onclick="monitorModal.open()">+ Adicionar grupo</button>
+        </div>
+        <div class="panel-body flush">
+          <table>
+            <thead><tr><th>Nome</th><th>WhatsApp Group ID</th><th>Status</th><th>Última mensagem</th><th class="num">Ações</th></tr></thead>
+            <tbody id="monitorGroupsBody"><tr><td colspan="5" class="empty">carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== FILTERS ===== -->
+    <section class="view" data-section="filters">
+      <div class="help">
+        <b>Filtros do nicho 3D:</b> configure as palavras-chave que definem se um produto
+        é do mundo 3D. As ofertas que não baterem são descartadas.
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Palavras-chave do nicho</h2></div>
+        <div class="panel-body">
+          <label>Incluir (uma por linha)</label>
+          <textarea id="kw_include" rows="14" style="font-family: var(--mono);"></textarea>
+          <div class="hint">Use palavras em minúsculas. Ex.: filamento, pla, petg, ender, bambu…</div>
+        </div>
+      </div>
+      <div style="height: 16px"></div>
+      <div class="panel">
+        <div class="panel-head"><h2>Palavras de exclusão</h2></div>
+        <div class="panel-body">
+          <label>Excluir (uma por linha)</label>
+          <textarea id="kw_exclude" rows="4" style="font-family: var(--mono);"></textarea>
+          <div class="hint">Se o título tiver qualquer dessas palavras, a oferta é descartada.</div>
+        </div>
+      </div>
+      <div class="form-foot" style="margin-top: 16px;">
+        <button class="primary" onclick="saveFilters()">💾 Salvar filtros</button>
+      </div>
+    </section>
+
+    <!-- ===== OFFERS ===== -->
+    <section class="view" data-section="offers">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Ofertas recentes</h2>
+          <div class="toolbar">
+            <select id="offersHours">
+              <option value="1">última 1h</option>
+              <option value="6">últimas 6h</option>
+              <option value="24" selected>últimas 24h</option>
+              <option value="168">última semana</option>
+            </select>
+            <button class="ghost" onclick="loadOffers()">Atualizar</button>
+          </div>
+        </div>
+        <div class="panel-body flush">
+          <table>
+            <thead><tr><th>ID</th><th>Onde</th><th>Título</th><th class="num">Preço</th><th class="num">Desc %</th><th>Enviado</th></tr></thead>
+            <tbody id="offersBody"><tr><td colspan="6" class="empty">carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== COUPONS ===== -->
+    <section class="view" data-section="coupons">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Cupons descobertos</h2>
+          <button class="ghost" onclick="loadCoupons()">Atualizar</button>
+        </div>
+        <div class="panel-body flush">
+          <table>
+            <thead><tr><th>ID</th><th>Onde</th><th>Código</th><th>Descrição</th><th class="num">Desc %</th><th>Origem</th><th>Status</th></tr></thead>
+            <tbody id="couponsBody"><tr><td colspan="7" class="empty">carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== QUEUE ===== -->
+    <section class="view" data-section="queue">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Fila de envio</h2>
+          <div class="actions">
+            <button onclick="apiPost('/dispatch', null, 'Dispatch executado')">▶️ Disparar agora</button>
+          </div>
+        </div>
+        <div class="panel-body flush">
+          <table>
+            <thead><tr><th>ID</th><th>Status</th><th>Tentativas</th><th>Agendado</th><th>Grupos</th><th>Prévia</th></tr></thead>
+            <tbody id="queueBody"><tr><td colspan="6" class="empty">carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== LOGS ===== -->
+    <section class="view" data-section="logs">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Logs do sistema</h2>
+          <div class="actions">
+            <select id="logLevel">
+              <option value="all">todos</option>
+              <option value="info">info+</option>
+              <option value="warn">warn+</option>
+              <option value="error" selected>erros</option>
+            </select>
+            <button class="ghost" onclick="loadLogs()">Atualizar</button>
+            <button class="ghost" onclick="toggleAutoLogs()" id="autoLogsBtn">▶ Auto-refresh</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="logs" id="logsBox">carregando…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SETTINGS ===== -->
+    <section class="view" data-section="settings">
+      <div class="help">
+        Configurações operacionais. <b>Atenção:</b> algumas mudanças exigem reiniciar o servidor.
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Intervalos e limites</h2></div>
+        <div class="panel-body">
+          <div class="row-3">
+            <div>
+              <label>Intervalo de scan (minutos)</label>
+              <input id="cfg_scan_int" type="number" min="1" />
+            </div>
+            <div>
+              <label>Desconto mínimo (%)</label>
+              <input id="cfg_min_disc" type="number" min="0" max="100" />
+            </div>
+            <div>
+              <label>Modo envio</label>
+              <select id="cfg_dry">
+                <option value="auto">automático (usa credenciais se houver)</option>
+                <option value="dry">sempre dry-run</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="height: 16px"></div>
+      <div class="panel">
+        <div class="panel-head"><h2>Servidor</h2></div>
+        <div class="panel-body">
+          <div class="row">
+            <div>
+              <label>Porta</label>
+              <input id="cfg_port" type="number" />
+              <div class="hint">3040 (recomendado)</div>
+            </div>
+            <div>
+              <label>Webhook URL público</label>
+              <input id="cfg_webhook_url" type="url" placeholder="https://..." />
+            </div>
+          </div>
+          <div class="form-foot" style="margin-top: 16px;">
+            <button class="primary" onclick="saveSettings()">💾 Salvar</button>
+          </div>
+        </div>
+      </div>
+      <div style="height: 16px"></div>
+      <div class="panel">
+        <div class="panel-head"><h2>Backup & reset</h2></div>
+        <div class="panel-body">
+          <p class="hint" style="color: var(--text-dim); margin-top: 0;">O banco SQLite fica em <code>data/garimpo.db</code>. Você pode baixá-lo ou restaurá-lo.</p>
+          <div class="row" style="grid-template-columns: 1fr 1fr 1fr;">
+            <button onclick="downloadDb()">⬇ Baixar banco</button>
+            <button onclick="document.getElementById('restoreInput').click()">⬆ Restaurar banco</button>
+            <input type="file" id="restoreInput" style="display:none" onchange="restoreDb(event)" />
+            <button class="danger" onclick="resetDb()">⚠ Resetar tudo</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Modal: Adicionar grupo alvo -->
+<div class="modal-bg" id="targetGroupModal">
+  <div class="modal">
+    <div class="modal-head"><h2>Adicionar grupo alvo</h2><button class="close-x" onclick="targetGroupModal.close()">×</button></div>
+    <div class="modal-body">
+      <label>WhatsApp Group ID</label>
+      <input id="tg_id" type="text" placeholder="120363012345678901@g.us" />
+      <div class="hint">O ID no formato <code>...@g.us</code>. Você pega via Meta API ou do webhook (em <code>value.metadata</code>).</div>
+    </div>
+    <div class="modal-foot">
+      <button class="ghost" onclick="targetGroupModal.close()">Cancelar</button>
+      <button class="primary" onclick="addTargetGroup()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Adicionar grupo monitorado -->
+<div class="modal-bg" id="monitorModal">
+  <div class="modal">
+    <div class="modal-head"><h2>Adicionar grupo concorrente</h2><button class="close-x" onclick="monitorModal.close()">×</button></div>
+    <div class="modal-body">
+      <div class="row">
+        <div><label>Nome</label><input id="mg_name" type="text" placeholder="Ofertas 3D BR" /></div>
+        <div><label>WhatsApp Group ID</label><input id="mg_id" type="text" placeholder="120363012345678901@g.us" /></div>
+      </div>
+      <div class="hint">Para funcionar, seu número precisa estar neste grupo.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="ghost" onclick="monitorModal.close()">Cancelar</button>
+      <button class="primary" onclick="addMonitor()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Simular mensagem -->
+<div class="modal-bg" id="simulateModal">
+  <div class="modal" style="width: 720px;">
+    <div class="modal-head"><h2>Simular mensagem de grupo</h2><button class="close-x" onclick="simulateModal.close()">×</button></div>
+    <div class="modal-body">
+      <div class="row">
+        <div><label>Group ID monitorado</label><input id="sim_group" type="text" /></div>
+        <div><label>Message ID (opcional)</label><input id="sim_msgid" type="text" placeholder="sim-..." /></div>
+      </div>
+      <div style="height: 10px"></div>
+      <label>Texto da mensagem (cole um exemplo)</label>
+      <textarea id="sim_text" rows="8" placeholder="🔥 Oferta!
+Filamento PLA 1kg preto
+R$ 39,90 (era R$ 79,90)
+https://shopee.com.br/product/123/456
+CUPOM: WORLD3D10"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="ghost" onclick="simulateModal.close()">Cancelar</button>
+      <button class="primary" onclick="runSimulate()">▶ Processar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Test send -->
+<div class="modal-bg" id="testSendModal">
+  <div class="modal" style="width: 640px;">
+    <div class="modal-head"><h2>Enviar mensagem de teste</h2><button class="close-x" onclick="testSendModal.close()">×</button></div>
+    <div class="modal-body">
+      <label>Group ID alvo</label>
+      <input id="ts_group" type="text" placeholder="120363012345678901@g.us" />
+      <div style="height: 10px"></div>
+      <label>Texto</label>
+      <textarea id="ts_text" rows="4" placeholder="Mensagem de teste do Garimpeiro 3D 🛸"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="ghost" onclick="testSendModal.close()">Cancelar</button>
+      <button class="primary" onclick="runTestSend()">✉ Enviar</button>
+    </div>
+  </div>
+</div>
+
+<div class="flash" id="flash"></div>
+
+<script>
+const API = {
+  stats: () => fetch('/stats').then(r => r.json()),
+  offers: (h) => fetch(`/offers/recent?hours=${h}`).then(r => r.json()),
+  coupons: () => fetch('/coupons/pending').then(r => r.json()),
+  queue: () => fetch('/queue/pending').then(r => r.json()),
+  groups: () => fetch('/groups').then(r => r.json()),
+  monitors: () => fetch('/monitor-groups').then(r => r.json()),
+  targetGroups: () => fetch('/target-groups').then(r => r.json()),
+  config: () => fetch('/config').then(r => r.json()),
+  logs: () => fetch('/logs').then(r => r.json()),
+  post: (url) => fetch(url, { method: 'POST' }).then(r => r.json()),
+  patch: (url, body) => fetch(url, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }).then(r => r.json()),
+  put: (url, body) => fetch(url, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }).then(r => r.json()),
+  del: (url) => fetch(url, { method: 'DELETE' }).then(r => r.json()),
+};
+
+const state = {
+  view: 'dashboard',
+  config: null,
+  lastRuns: [],
+};
+
+function $(sel) { return document.querySelector(sel); }
+function $$(sel) { return Array.from(document.querySelectorAll(sel)); }
+function fmtMoney(c) { return 'R$ ' + (c/100).toFixed(2).replace('.', ','); }
+function fmtDate(s) { if (!s || s === '-') return '—'; const d = new Date(s); return d.toLocaleString('pt-BR'); }
+function escapeHtml(s) { return (s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function truncate(s, n) { s = s || ''; return s.length > n ? s.slice(0, n) + '…' : s; }
+
+function flash(msg, type='ok', ms=2400) {
+  const el = $('#flash');
+  el.textContent = msg;
+  el.className = 'flash show ' + type;
+  clearTimeout(flash._t);
+  flash._t = setTimeout(() => el.classList.remove('show'), ms);
+}
+
+async function apiPost(path, body, okMsg) {
+  try {
+    const opts = { method: 'POST' };
+    if (body) { opts.headers = {'Content-Type':'application/json'}; opts.body = JSON.stringify(body); }
+    const r = await fetch(path, opts);
+    const j = await r.json();
+    flash(okMsg || 'OK', 'ok');
+    refreshAll();
+    return j;
+  } catch (e) {
+    flash('Erro: ' + e.message, 'error');
+  }
+}
+
+// ===== Navegação =====
+function showView(name) {
+  state.view = name;
+  $$('.view').forEach(v => v.classList.toggle('active', v.dataset.section === name));
+  $$('.menu a').forEach(a => a.classList.toggle('active', a.dataset.view === name));
+  const titles = {
+    dashboard: ['Dashboard', 'Status geral do sistema'],
+    connection: ['Conexão WhatsApp', 'Credenciais e webhook da Meta Cloud API'],
+    affiliates: ['Afiliados', 'IDs de cada marketplace'],
+    groups: ['Grupos alvo', 'Onde o Garimpeiro posta as ofertas'],
+    monitors: ['Grupos monitorados', 'Concorrentes que o Garimpeiro observa'],
+    filters: ['Filtros do nicho 3D', 'Palavras-chave que definem o que é relevante'],
+    offers: ['Ofertas recentes', 'Histórico de produtos capturados'],
+    coupons: ['Cupons', 'Códigos de desconto descobertos'],
+    queue: ['Fila de envio', 'Mensagens aguardando postagem'],
+    logs: ['Logs', 'Eventos do sistema (tempo real)'],
+    settings: ['Configurações', 'Intervalos, limites, backup'],
+  };
+  const [t, s] = titles[name] || ['—','—'];
+  $('#viewTitle').textContent = t;
+  $('#viewSubtitle').textContent = s;
+  loadView(name);
+  location.hash = name;
+}
+
+function loadView(name) {
+  switch (name) {
+    case 'dashboard': loadDashboard(); break;
+    case 'connection': loadConnection(); break;
+    case 'affiliates': loadAffiliates(); break;
+    case 'groups': loadTargetGroups(); break;
+    case 'monitors': loadMonitors(); break;
+    case 'filters': loadFilters(); break;
+    case 'offers': loadOffers(); break;
+    case 'coupons': loadCoupons(); break;
+    case 'queue': loadQueue(); break;
+    case 'logs': loadLogs(); break;
+    case 'settings': loadSettings(); break;
+  }
+}
+
+$$('.menu a').forEach(a => a.addEventListener('click', e => {
+  e.preventDefault();
+  showView(a.dataset.view);
+}));
+window.addEventListener('hashchange', () => {
+  const v = location.hash.slice(1);
+  if (v) showView(v);
+});
+
+// ===== Dashboard =====
+async function loadDashboard() {
+  try {
+    const s = await API.stats();
+    $('#m_offers').textContent = s.offers?.total ?? 0;
+    $('#m_offers_sub').textContent = (s.offers?.sent ?? 0) + ' enviadas';
+    $('#m_coupons').textContent = s.coupons?.total ?? 0;
+    $('#m_coupons_sub').textContent = (s.coupons?.sent ?? 0) + ' utilizados';
+    $('#m_queue').textContent = s.pendingQueue?.total ?? 0;
+    $('#m_groups').textContent = s.monitorGroups?.total ?? 0;
+    $('#m_groups_sub').textContent = (s.targetGroups?.total ?? 0) + ' grupos alvo';
+    state.lastRuns = s.lastRuns || [];
+    renderLastRuns();
+    renderConnSummary(s);
+  } catch (e) {
+    flash('Falha ao carregar dashboard', 'error');
+  }
+}
+
+function renderLastRuns() {
+  const tb = $('#lastRunsBody');
+  if (!state.lastRuns.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">nenhuma varredura ainda</td></tr>'; return; }
+  tb.innerHTML = state.lastRuns.slice(0, 8).map(r => `
+    <tr>
+      <td>${fmtDate(r.started_at)}</td>
+      <td><span class="pill">${escapeHtml(r.marketplace)}</span></td>
+      <td class="num">${r.scanned}</td>
+      <td class="num">${r.filtered}</td>
+      <td class="num" style="color: var(--accent);">${r.saved}</td>
+      <td class="num" style="color: ${r.errors ? 'var(--danger)' : 'var(--text-faint)'};">${r.errors}</td>
+      <td class="num">${r.duration_ms}ms</td>
+    </tr>
+  `).join('');
+}
+
+function renderConnSummary(s) {
+  const el = $('#connSummary');
+  const wa = s.wa || {};
+  const ok = wa.configured === true;
+  $('#connDot').className = 'dot ' + (ok ? '' : 'off');
+  $('#connText').textContent = ok ? 'WhatsApp conectado' : 'sem credenciais (dry-run)';
+  if (!ok) {
+    $('#waStatus').className = 'pill danger';
+    $('#waStatus').textContent = 'não configurado';
+  } else {
+    $('#waStatus').className = 'pill ok';
+    $('#waStatus').textContent = 'configurado';
+  }
+  el.innerHTML = `
+    <div style="display:grid; gap: 8px;">
+      <div><b>Phone ID:</b> <span class="mono">${wa.phoneId ? wa.phoneId : '—'}</span></div>
+      <div><b>Token:</b> <span class="mono">${wa.tokenSet ? '••••••••' + wa.tokenSuffix : '—'}</span></div>
+      <div><b>Webhook URL:</b> <span class="mono">${wa.webhookUrl || '—'}</span></div>
+      <div><b>Grupos alvo:</b> ${wa.targetGroupsCount ?? 0}</div>
+      <div><b>Modo:</b> <span class="pill ${ok ? 'ok' : 'warn'}">${ok ? 'envio real' : 'dry-run'}</span></div>
+    </div>
+  `;
+}
+
+// ===== Connection =====
+async function loadConnection() {
+  const s = await API.stats();
+  const wa = s.wa || {};
+  $('#wa_phone_id').value = wa.phoneId || '';
+  $('#wa_token').value = wa.tokenSet ? '' : '';
+  $('#wa_token').placeholder = wa.tokenSet ? '••••••••' + (wa.tokenSuffix || '') : 'cole aqui o token';
+  $('#wa_verify').value = wa.verifyToken || '';
+  $('#wa_webhook_url').value = wa.webhookUrl || '';
+}
+
+async function saveConnection() {
+  const body = {
+    phoneNumberId: $('#wa_phone_id').value.trim(),
+    accessToken: $('#wa_token').value.trim(),
+    verifyToken: $('#wa_verify').value.trim(),
+    webhookUrl: $('#wa_webhook_url').value.trim(),
+  };
+  if (!body.phoneNumberId && !$('#wa_token').value) {
+    flash('Preencha pelo menos o Phone ID', 'error');
+    return;
+  }
+  await apiPost('/config/connection', body, 'Conexão salva');
+}
+
+async function testWaConnection() {
+  flash('Testando…', 'ok', 1500);
+  const r = await apiPost('/config/test-wa', null, 'Teste concluído');
+}
+
+// ===== Affiliates =====
+async function loadAffiliates() {
+  const s = await API.stats();
+  const a = s.affiliates || {};
+  $('#af_shopee').value = a.shopee || '';
+  $('#af_ml').value = a.mercadolivre || '';
+  $('#af_ali').value = a.aliexpress || '';
+}
+
+async function saveAffiliates() {
+  await apiPost('/config/affiliates', {
+    shopee: $('#af_shopee').value.trim(),
+    mercadolivre: $('#af_ml').value.trim(),
+    aliexpress: $('#af_ali').value.trim(),
+  }, 'Afiliados salvos');
+}
+
+// ===== Target groups =====
+async function loadTargetGroups() {
+  const r = await API.targetGroups();
+  const tb = $('#targetGroupsBody');
+  if (!r.groups || !r.groups.length) {
+    tb.innerHTML = '<tr><td colspan="3" class="empty">nenhum grupo alvo cadastrado — adicione um para começar a receber ofertas</td></tr>';
+    return;
+  }
+  tb.innerHTML = r.groups.map(g => `
+    <tr>
+      <td class="mono">${escapeHtml(g.whatsapp_group_id)}</td>
+      <td>${fmtDate(g.created_at)}</td>
+      <td class="num"><button class="danger" onclick="removeTargetGroup(${g.id})">🗑️</button></td>
+    </tr>
+  `).join('');
+}
+
+const targetGroupModal = {
+  open() { $('#targetGroupModal').classList.add('open'); $('#tg_id').focus(); },
+  close() { $('#targetGroupModal').classList.remove('open'); $('#tg_id').value = ''; },
+};
+
+async function addTargetGroup() {
+  const id = $('#tg_id').value.trim();
+  if (!id) { flash('Preencha o ID', 'error'); return; }
+  await apiPost('/target-groups', { whatsappGroupId: id }, 'Grupo adicionado');
+  targetGroupModal.close();
+  loadTargetGroups();
+}
+
+async function removeTargetGroup(id) {
+  if (!confirm('Remover este grupo alvo?')) return;
+  await API.del('/target-groups/' + id);
+  loadTargetGroups();
+  flash('Removido', 'ok');
+}
+
+// ===== Monitors =====
+async function loadMonitors() {
+  const r = await API.monitors();
+  const tb = $('#monitorGroupsBody');
+  if (!r.groups || !r.groups.length) {
+    tb.innerHTML = '<tr><td colspan="5" class="empty">nenhum grupo monitorado — adicione grupos concorrentes para o Garimpeiro copiar ofertas</td></tr>';
+    return;
+  }
+  tb.innerHTML = r.groups.map(g => `
+    <tr>
+      <td>${escapeHtml(g.name)}</td>
+      <td class="mono truncate" title="${escapeHtml(g.whatsapp_group_id)}">${escapeHtml(g.whatsapp_group_id)}</td>
+      <td><span class="pill ${g.enabled ? 'ok' : 'muted'}">${g.enabled ? 'ativo' : 'pausado'}</span></td>
+      <td>${fmtDate(g.last_seen_message_at)}</td>
+      <td class="num row-actions">
+        <button onclick="toggleMonitor(${g.id}, ${!g.enabled})">${g.enabled ? 'Pausar' : 'Ativar'}</button>
+        <button class="danger" onclick="removeMonitor(${g.id})">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+const monitorModal = {
+  open() { $('#monitorModal').classList.add('open'); $('#mg_name').focus(); },
+  close() { $('#monitorModal').classList.remove('open'); $('#mg_name').value = ''; $('#mg_id').value = ''; },
+};
+
+async function addMonitor() {
+  const name = $('#mg_name').value.trim();
+  const id = $('#mg_id').value.trim();
+  if (!name || !id) { flash('Preencha nome e ID', 'error'); return; }
+  await apiPost('/monitor-groups', { name, whatsappGroupId: id }, 'Grupo monitorado adicionado');
+  monitorModal.close();
+  loadMonitors();
+}
+
+async function toggleMonitor(id, enabled) {
+  await API.patch('/monitor-groups/' + id, { enabled });
+  loadMonitors();
+  flash(enabled ? 'Ativado' : 'Pausado', 'ok');
+}
+
+async function removeMonitor(id) {
+  if (!confirm('Remover este grupo monitorado?')) return;
+  await API.del('/monitor-groups/' + id);
+  loadMonitors();
+  flash('Removido', 'ok');
+}
+
+// ===== Filters =====
+async function loadFilters() {
+  const r = await API.config();
+  const f = r.filters || {};
+  $('#kw_include').value = (f.include || []).join('\n');
+  $('#kw_exclude').value = (f.exclude || []).join('\n');
+}
+
+async function saveFilters() {
+  const inc = $('#kw_include').value.split('\n').map(s => s.trim()).filter(Boolean);
+  const exc = $('#kw_exclude').value.split('\n').map(s => s.trim()).filter(Boolean);
+  await apiPost('/config/filters', { include: inc, exclude: exc }, 'Filtros salvos');
+}
+
+// ===== Offers =====
+async function loadOffers() {
+  const h = $('#offersHours').value;
+  const r = await API.offers(h);
+  const tb = $('#offersBody');
+  if (!r.offers.length) { tb.innerHTML = '<tr><td colspan="6" class="empty">nenhuma oferta nesse intervalo</td></tr>'; return; }
+  tb.innerHTML = r.offers.map(o => `
+    <tr>
+      <td class="num">${o.id}</td>
+      <td><span class="pill">${escapeHtml(o.marketplace)}</span></td>
+      <td><span class="truncate" title="${escapeHtml(o.title)}">${escapeHtml(o.title)}</span></td>
+      <td class="num">${fmtMoney(o.price_current)}</td>
+      <td class="num" style="color: var(--accent);">${o.discount_pct ? o.discount_pct + '%' : '—'}</td>
+      <td>${o.sent_count > 0 ? '<span class="pill ok">enviado</span>' : '<span class="pill muted">pendente</span>'}</td>
+    </tr>
+  `).join('');
+}
+
+// ===== Coupons =====
+async function loadCoupons() {
+  const r = await API.coupons();
+  const tb = $('#couponsBody');
+  if (!r.coupons.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">nenhum cupom ainda</td></tr>'; return; }
+  tb.innerHTML = r.coupons.map(c => `
+    <tr>
+      <td class="num">${c.id}</td>
+      <td><span class="pill">${escapeHtml(c.marketplace)}</span></td>
+      <td class="mono">${escapeHtml(c.code)}</td>
+      <td><span class="truncate" title="${escapeHtml(c.description)}">${escapeHtml(c.description)}</span></td>
+      <td class="num">${c.discount_pct ? c.discount_pct + '%' : '—'}</td>
+      <td><span class="pill muted">${escapeHtml(c.source)}</span></td>
+      <td>${c.sent_count > 0 ? '<span class="pill ok">enviado</span>' : '<span class="pill warn">pendente</span>'}</td>
+    </tr>
+  `).join('');
+}
+
+// ===== Queue =====
+async function loadQueue() {
+  const r = await API.queue();
+  const tb = $('#queueBody');
+  if (!r.messages.length) { tb.innerHTML = '<tr><td colspan="6" class="empty">fila vazia 🎉</td></tr>'; return; }
+  tb.innerHTML = r.messages.map(m => `
+    <tr>
+      <td class="num">${m.id}</td>
+      <td><span class="pill ${m.status === 'pending' ? 'warn' : m.status === 'sent' ? 'ok' : 'danger'}">${escapeHtml(m.status)}</span></td>
+      <td class="num">${m.attempts}</td>
+      <td>${fmtDate(m.scheduled_for)}</td>
+      <td class="num">${m.groupCount}</td>
+      <td><span class="truncate" style="max-width:420px" title="${escapeHtml(m.payload)}">${escapeHtml(m.payload)}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ===== Logs =====
+let autoLogs = false;
+let autoLogsTimer = null;
+async function loadLogs() {
+  const r = await API.logs();
+  const filter = $('#logLevel').value;
+  const lines = (r.lines || []).filter(l => {
+    if (filter === 'all') return true;
+    if (filter === 'info') return ['info','warn','error','debug'].includes(l.level);
+    if (filter === 'warn') return ['warn','error'].includes(l.level);
+    if (filter === 'error') return l.level === 'error';
+    return true;
+  });
+  const box = $('#logsBox');
+  const wasAtBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 20;
+  box.innerHTML = lines.map(l => `
+    <div class="log-line ${l.level}"><span class="ts">${escapeHtml(l.ts)}</span><span class="lvl">${escapeHtml(l.level.toUpperCase())}</span>${escapeHtml(l.msg)}${l.fields ? '  ' + escapeHtml(JSON.stringify(l.fields)) : ''}</div>
+  `).join('');
+  if (wasAtBottom) box.scrollTop = box.scrollHeight;
+}
+
+function toggleAutoLogs() {
+  autoLogs = !autoLogs;
+  $('#autoLogsBtn').textContent = autoLogs ? '⏸ Pausar' : '▶ Auto-refresh';
+  if (autoLogs) {
+    autoLogsTimer = setInterval(loadLogs, 3000);
+  } else {
+    clearInterval(autoLogsTimer);
+  }
+}
+
+// ===== Settings =====
+async function loadSettings() {
+  const s = await API.stats();
+  const r = await API.config();
+  const c = r.config || {};
+  $('#cfg_scan_int').value = c.scanIntervalMin ?? 15;
+  $('#cfg_min_disc').value = c.minDiscountPct ?? 20;
+  $('#cfg_dry').value = c.dryRun ? 'dry' : 'auto';
+  $('#cfg_port').value = c.port ?? 3040;
+  $('#cfg_webhook_url').value = c.webhookUrl ?? '';
+}
+
+async function saveSettings() {
+  await apiPost('/config/settings', {
+    scanIntervalMin: Number($('#cfg_scan_int').value),
+    minDiscountPct: Number($('#cfg_min_disc').value),
+    dryRun: $('#cfg_dry').value === 'dry',
+    port: Number($('#cfg_port').value),
+    webhookUrl: $('#cfg_webhook_url').value.trim(),
+  }, 'Configurações salvas');
+}
+
+async function downloadDb() {
+  window.location.href = '/admin/backup';
+}
+
+async function restoreDb(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  const r = await fetch('/admin/restore', { method: 'POST', body: fd });
+  const j = await r.json();
+  flash(j.ok ? 'Banco restaurado' : 'Falha: ' + (j.error||'?'), j.ok ? 'ok' : 'error');
+  refreshAll();
+}
+
+async function resetDb() {
+  if (!confirm('Isso vai APAGAR todas as ofertas, cupons, mensagens e grupos. Continuar?')) return;
+  if (!confirm('Tem certeza? Esta ação é irreversível.')) return;
+  await apiPost('/admin/reset', null, 'Banco resetado');
+}
+
+// ===== Simulate =====
+const simulateModal = {
+  open() { $('#simulateModal').classList.add('open'); $('#sim_text').focus(); },
+  close() { $('#simulateModal').classList.remove('open'); },
+};
+
+async function runSimulate() {
+  const body = {
+    whatsappGroupId: $('#sim_group').value.trim(),
+    whatsappMessageId: $('#sim_msgid').value.trim() || ('sim-' + Date.now()),
+    text: $('#sim_text').value,
+  };
+  if (!body.whatsappGroupId || !body.text) { flash('Preencha grupo e texto', 'error'); return; }
+  await apiPost('/simulate', body, 'Mensagem processada');
+  simulateModal.close();
+}
+
+const testSendModal = {
+  open() { $('#testSendModal').classList.add('open'); $('#ts_text').focus(); },
+  close() { $('#testSendModal').classList.remove('open'); },
+};
+
+async function runTestSend() {
+  const body = { groupId: $('#ts_group').value.trim(), text: $('#ts_text').value };
+  if (!body.groupId || !body.text) { flash('Preencha grupo e texto', 'error'); return; }
+  await apiPost('/test-send', body, 'Enviado');
+  testSendModal.close();
+}
+
+// ===== Refresh =====
+async function refreshAll() {
+  $('#lastUpdate').textContent = 'atualizado às ' + new Date().toLocaleTimeString('pt-BR');
+  loadView(state.view);
+}
+
+// Boot
+async function boot() {
+  const init = location.hash.slice(1) || 'dashboard';
+  showView(init);
+  refreshAll();
+  setInterval(refreshAll, 15000);
+}
+boot();
+</script>
+</body>
+</html>
