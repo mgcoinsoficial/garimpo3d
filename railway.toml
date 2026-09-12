@@ -1,0 +1,12 @@
+# railway.toml — config mínima do Railway
+# Railway detecta Dockerfile automaticamente; este arquivo só força algumas opções.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Railway injeta $PORT automaticamente; o app lê process.env.PORT.
+# Healthcheck definido no Dockerfile via HEALTHCHECK.
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
